@@ -11,9 +11,10 @@ absolutes = []
 centroids = []
 point_colors = []
 closest_centroid = []
-colors = ["red", "blue", "green"]
-# k represents the number of clusters
-k = len(colors)
+colors = ["red", "blue"]
+clusters = len(colors)
+
+FILE_NAME = "astronomy_calculations.csv"
 
 def absolute(Vmag, plx):
     '''
@@ -22,7 +23,10 @@ def absolute(Vmag, plx):
     Returns: The absolute magnitude of a star with those Vmag and plx
             values
     '''
-    return (15 - Vmag - 5 * math.log10(plx)) / 2.5
+    if abs(plx) != 0:
+        return (15 - Vmag - 5 * math.log10(abs(plx))) / 2.5
+    else:
+        return 0
 
 def luminosity(absolute):
     '''
@@ -62,7 +66,7 @@ def average(lst):
 def main():
     last_centroids = []
     # opening, reading, and extracting data from the text file
-    with open("HIP_star_data.txt", "r") as infile:
+    with open(FILE_NAME, "r") as infile:
         while True:
             row = infile.readline()
             if row == "":
@@ -72,21 +76,14 @@ def main():
                 
     # separates rows into lists
     for i in range(len(rows)):
-        rows[i] = rows[i].split(sep = " ")
+        rows[i] = rows[i].split(sep = ",")
     
-    # removes unnecessary spacing in .txt file
-    for i in range(len(rows) - 1, -1, -1):
-        for j in range(len(rows[i]) - 1, -1, -1):
-            if rows[i][j] == "":
-                rows[i].pop(j)
-            if i != 0 and rows[i][j] != "":
-                rows[i][j] = rows[i][j].strip()
+    # remove headers
+    rows.pop(0)
     
-    # removes incomplete data
-    for i in range(len(rows) - 1, -1, -1):
-        for j in range(len(rows[i])- 1, -1, -1):
-            if rows[i][j] == "":
-                rows.pop(i)
+    for i in range(len(rows)):
+        for j in range(len(rows[i])):
+            rows[i][j] = float(rows[i][j])
     
     # transposes rows into columns, easier to work with
     for j in range(len(rows[0])):
@@ -95,48 +92,32 @@ def main():
             column.append(rows[i][j])
         columns.append(column)
     
-    # removes headers, converts data into floats
-    for i in range(len(columns) - 1, -1, -1):
-        for j in range(len(columns[i]) - 1, -1, -1):
-            if j == 0:
-                columns[i].pop(j)
-            else:
-                columns[i][j] = float(columns[i][j])
-    
-    # extracts Vmag and plx data, computes absolute magnitude,
-    # adds absolute magnitude data to columns list
-    for i in range(1, len(columns[0])):
-        absolutes.append(absolute(columns[1][i], columns[4][i]))
-    columns.append(absolutes)
-    
-    # idk what this line does but it's super important
-    columns[8].pop(0)
-    
     # defines number of stars as the number of rows in the dataset
-    num_stars = len(columns[9])
+    num_stars = len(columns[0])
     
     # resolution of the graph
     plt.figure(dpi = 500)
     
     # for each of the clusters...
-    for i in range(k):
+    for i in range(clusters):
         # seeds each cluster with a randomly selected starting point
         x = rnd.randint(1, num_stars)
-        centroids.append([columns[8][x], columns[9][x]])
+        centroids.append([columns[2][x], columns[3][x]])
 
     # while the centroids are still converging...
-    while last_centroids != centroids:
+    while centroids != last_centroids:
         point_colors = []
         # clearing the coordinates of the last centroids
         for l in range(len(last_centroids) - 1, -1, -1):
             last_centroids.pop(l)
-        
+
         # computing the distance of each star to each centroid
         for i in range(num_stars):
             distances = []
-            for j in range(k):
+            for j in range(clusters):
                 # add the distance to this star to each centroid
-                distances.append(distance(columns[8][i], centroids[j][0], columns[9][i], centroids[j][1]))
+                distances.append(distance(columns[2][i], centroids[j][0], 
+                                          columns[3][i], centroids[j][1]))
             # minimum distance = closest centroid
             closest_centroid = distances.index(min(distances))
             # assigns that star the color of the closest centroids
@@ -148,28 +129,28 @@ def main():
             last_centroids.append(centroids[l])
         
         # preparing to iterate by clearing centroid values
-        for m in range(k - 1, -1, -1):
+        for m in range(clusters - 1, -1, -1):
             centroids.pop(m)
         
         # computing the centroid of each new cluster
-        for c in range(k):
+        for c in range(clusters):
             points = []
             for p in range(num_stars):
                 if point_colors[p] == colors[c]:
-                    points.append([columns[8][p], columns[9][p]])
+                    points.append([columns[2][p], columns[3][p]])
             centroids.append(average(points))
     
-    # after the centroids have converged
-    
+    # after the centroids have converged:    
     # graphs each point, coloring it the color of the closest centroid
     for i in range(num_stars):
         plt.xlabel("Color (B-V)")
         plt.ylabel("Absolute Magnitude")
-        plt.plot(columns[8][i], columns[9][i], "o", color = point_colors[i], 
-                 ms = 0.5)
+        plt.plot(columns[2][i], columns[3][i], 
+                 "o", color = point_colors[i], ms = 0.05)
         
     # graphs centroids
-    for i in range(k):
-        plt.plot(centroids[i][0], centroids[i][1], "s", color = "black", ms = 3)
+    for i in range(clusters):
+        plt.plot(centroids[i][0], centroids[i][1], "s", 
+                 color = "black", ms = 3)
 
 main()
