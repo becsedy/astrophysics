@@ -82,7 +82,7 @@ def main():
                  "o", ms = 2, c = "black", label = "Centroids")
         plt.xlabel("Color (B-V) (nm)")
         plt.ylabel("Luminosity (Solar Units) (log base 10)")
-        plt.title("Color VS Absolute Magnitude, Clusters = " + str(i))
+        plt.title("Color VS Luminosity, Clusters = " + str(i))
         
         filename = "Clusters_" + str(i) + ".png"
         filenames += 5 * [filename]
